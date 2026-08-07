@@ -23,7 +23,6 @@ export function createDemoAccounts(): AccountView[] {
         source: "codex_app_server",
         checkedAt,
         windows: [
-          { limitId: "codex", limitName: "Codex", kind: "primary", usedPercent: 32, remainingPercent: 68, windowDurationMins: 300, resetsAt: futureIso(192) },
           { limitId: "codex", limitName: "Codex", kind: "secondary", usedPercent: 18, remainingPercent: 82, windowDurationMins: 10_080, resetsAt: futureIso(6_840) },
         ],
       },
@@ -43,7 +42,6 @@ export function createDemoAccounts(): AccountView[] {
         source: "codex_app_server",
         checkedAt,
         windows: [
-          { limitId: "codex", limitName: "Codex", kind: "primary", usedPercent: 76, remainingPercent: 24, windowDurationMins: 300, resetsAt: futureIso(74) },
           { limitId: "codex", limitName: "Codex", kind: "secondary", usedPercent: 47, remainingPercent: 53, windowDurationMins: 10_080, resetsAt: futureIso(3_420) },
         ],
       },
@@ -63,8 +61,7 @@ export function createDemoAccounts(): AccountView[] {
         source: "codex_app_server",
         checkedAt,
         windows: [
-          { limitId: "codex", limitName: "Codex", kind: "primary", usedPercent: 91, remainingPercent: 9, windowDurationMins: 300, resetsAt: futureIso(28) },
-          { limitId: "codex", limitName: "Codex", kind: "secondary", usedPercent: 63, remainingPercent: 37, windowDurationMins: 10_080, resetsAt: futureIso(1_880) },
+          { limitId: "codex", limitName: "Codex", kind: "secondary", usedPercent: 91, remainingPercent: 9, windowDurationMins: 10_080, resetsAt: futureIso(1_880) },
         ],
       },
     },

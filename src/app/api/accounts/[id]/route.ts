@@ -1,0 +1,10 @@
+import { NextResponse } from "next/server";
+import { assertMutationSafety, jsonError } from "@/lib/api-safety";
+import { deleteAccount, getAccount } from "@/lib/accounts/service";
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+import fs from "node:fs/promises";
+import { getAccountRoot } from "@/lib/data-root";
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) { try { const { id } = await params; const account = await getAccount(id); return account ? NextResponse.json({ account }) : jsonError(new Error("Không tìm thấy tài khoản"), 404); } catch (error) { return jsonError(error, 500); } }
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) { try { assertMutationSafety(request); const { id } = await params; const account = await prisma.account.findUnique({ where: { id } }); if (!account) return jsonError(new Error("Không tìm thấy tài khoản"), 404); await deleteAccount(id); await fs.rm(getAccountRoot(account.codexHomeId), { recursive: true, force: true }); return NextResponse.json({ ok: true }); } catch (error) { return jsonError(error); } }
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) { try { assertMutationSafety(request); const { id } = await params; const body = z.object({ displayName: z.string().trim().min(1).max(80).optional() }).parse(await request.json()); const account = await prisma.account.update({ where: { id }, data: body }); return NextResponse.json({ account: await getAccount(account.id) }); } catch (error) { return jsonError(error); } }

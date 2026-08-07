@@ -1,0 +1,161 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum AccountStatus {
+  NEW
+  ACTIVE
+  LOGIN_REQUIRED
+  ACCESS_DENIED
+  UNSUPPORTED
+  ERROR
+}
+
+enum UsageSource {
+  CODEX_APP_SERVER
+  MANUAL
+}
+
+enum UsageStatus {
+  AVAILABLE
+  UNSUPPORTED
+  LOGIN_REQUIRED
+  ACCESS_DENIED
+  ERROR
+}
+
+enum WindowKind {
+  PRIMARY
+  SECONDARY
+}
+
+model Account {
+  id               String               @id @default(cuid())
+  displayName      String
+  maskedEmail      String?
+  codexHomeId      String               @unique
+  status           AccountStatus        @default(NEW)
+  currentPlan      String?
+  previousPlan     String?
+  lastPlanChangeAt DateTime?
+  lastCheckedAt    DateTime?
+  lastSuccessAt    DateTime?
+  lastErrorCode    String?
+  lastErrorMessage String?
+  sortOrder        Int                  @default(0)
+  color            String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  snapshots        UsageSnapshot[]
+  planEvents       PlanEvent[]
+  checkAttempts    CheckAttempt[]
+  tokenUsage       TokenUsageSnapshot[]
+  dailyUsage       DailyTokenUsage[]
+}
+
+model UsageSnapshot {
+  id                    String              @id @default(cuid())
+  accountId             String
+  source                UsageSource
+  plan                  String?
+  status                UsageStatus
+  checkedAt             DateTime
+  rateLimitReachedType  String?
+  creditsBalance        String?
+  creditsHas            Boolean?
+  creditsUnlimited      Boolean?
+  resetCreditsAvailable Int?
+  message               String?
+  account               Account             @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  windows               UsageWindow[]
+  tokenUsage            TokenUsageSnapshot?
+
+  @@index([accountId, checkedAt])
+}
+
+model UsageWindow {
+  id                 String        @id @default(cuid())
+  snapshotId         String
+  limitId            String
+  limitName          String?
+  kind               WindowKind
+  usedPercent        Int
+  remainingPercent   Int
+  windowDurationMins Int?
+  resetsAt           DateTime?
+  snapshot           UsageSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@index([snapshotId, limitId, kind])
+}
+
+model TokenUsageSnapshot {
+  id                    String         @id @default(cuid())
+  accountId             String
+  snapshotId            String?        @unique
+  checkedAt             DateTime
+  lifetimeTokens        BigInt?
+  peakDailyTokens       BigInt?
+  longestRunningTurnSec Int?
+  currentStreakDays     Int?
+  longestStreakDays     Int?
+  account               Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  snapshot              UsageSnapshot? @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, checkedAt])
+}
+
+model DailyTokenUsage {
+  id        String   @id @default(cuid())
+  accountId String
+  date      DateTime
+  tokens    BigInt
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, date])
+  @@index([accountId, date])
+}
+
+model PlanEvent {
+  id         String   @id @default(cuid())
+  accountId  String
+  fromPlan   String?
+  toPlan     String?
+  detectedAt DateTime
+  account    Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, detectedAt])
+}
+
+model CheckAttempt {
+  id           String      @id @default(cuid())
+  accountId    String
+  source       UsageSource
+  startedAt    DateTime
+  finishedAt   DateTime?
+  status       UsageStatus
+  retryCount   Int         @default(0)
+  errorCode    String?
+  errorMessage String?
+  account      Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, startedAt])
+}
+
+model AppSettings {
+  id                 Int      @id @default(1)
+  theme              String   @default("system")
+  sortKey            String   @default("displayName")
+  autoRefreshEnabled Boolean  @default(false)
+  autoRefreshMinutes Int      @default(15)
+  updatedAt          DateTime @updatedAt
+}

@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Codex Usage Manager
 
-## Getting Started
+Ứng dụng web chạy cục bộ để theo dõi quota Codex qua giao thức chính thức `codex app-server` (JSONL stdio). Ứng dụng không scraping ChatGPT, không dùng Platform Usage API và không đọc token/password của người dùng.
 
-First, run the development server:
+## Yêu cầu
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Windows 10/11
+- Node.js LTS và Codex CLI đã đăng nhập được
+
+## Chạy lần đầu
+
+Sau khi cài Node.js, hãy đóng và mở lại PowerShell để PATH được cập nhật. Nếu cửa sổ hiện tại vẫn báo `npm is not recognized`, chạy một lần:
+
+```powershell
+$env:Path = "$env:ProgramFiles\nodejs;$env:Path"
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Trên máy bị chặn `npm.ps1` bởi Execution Policy, dùng `npm.cmd` thay cho `npm`:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```powershell
+npm.cmd install
+npm.cmd run setup
+npm.cmd run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Mở `http://127.0.0.1:3000`. Runtime data nằm ở `%LOCALAPPDATA%\CodexUsageManager` (có thể đổi bằng `CODEX_USAGE_DATA_DIR`). Mỗi tài khoản có `CODEX_HOME` riêng; `auth.json` không bao giờ được ghi vào database hoặc log.
 
-## Learn More
+## Shortcut ngoài Desktop
 
-To learn more about Next.js, take a look at the following resources:
+Tạo biểu tượng `Codex Usage Manager` trên Desktop một lần bằng lệnh:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```powershell
+npm.cmd run desktop:shortcut
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Sau đó chỉ cần bấm đúp biểu tượng. Launcher sẽ tự build khi source thay đổi, khởi động production server tối ưu ở chế độ ẩn, chờ app sẵn sàng rồi mở `http://127.0.0.1:3000` trong browser mặc định. Nếu server đã chạy, shortcut chỉ mở lại trang và không tạo tiến trình trùng.
 
-## Deploy on Vercel
+Lưu ý: hãy mở đúng địa chỉ `http://127.0.0.1:3000`. Không mở qua URL VS Code Dev Tunnel (`*.devtunnels.ms` hoặc cổng Forwarded trong mục Ports), vì Dev Tunnel sẽ yêu cầu đăng nhập GitHub riêng. Màn hình “Sign in to GitHub to continue to Dev Tunnels” không phải màn hình đăng nhập Codex và không liên quan đến tài khoản Gmail trong Chrome.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Nếu Codex CLI không nằm trong PATH, đặt đường dẫn tuyệt đối trong `.env`:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```text
+CODEX_CLI_PATH=C:/path/to/codex.exe
+```
+
+Với Codex cài cùng VS Code trên Windows, có thể dùng dạng đường dẫn sau (phiên bản thư mục có thể thay đổi):
+
+```text
+CODEX_CLI_PATH=C:/Users/<user>/.vscode/extensions/openai.chatgpt-<version>-win32-x64/bin/windows-x86_64/codex.exe
+```
+
+Sau khi sửa `.env`, hãy dừng và chạy lại `npm.cmd run dev` để Next.js nạp biến môi trường mới.
+
+## Kiểm tra chất lượng
+
+```powershell
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```
+
+`account/usage/read` và một số trường quota phụ thuộc phiên bản Codex CLI. Khi CLI không tương thích, dashboard giữ snapshot cũ và hiển thị trạng thái tương ứng; không suy diễn ngày hết hạn gói.
+
+## Bảo mật và xử lý lỗi
+
+Chỉ bind `127.0.0.1`, spawn CLI bằng argument array (`shell: false`), giới hạn request timeout và redact token/cookie/header trong lỗi. Xóa session yêu cầu xác nhận trên giao diện và xóa toàn bộ Codex home cô lập cùng metadata local.

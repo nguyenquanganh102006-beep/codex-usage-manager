@@ -1,5 +1,20 @@
 # Codex Usage Manager
 
+<p align="center">
+  <img src="docs/assets/codex-usage-manager-hero.png" alt="Codex Usage Manager dashboard illustration" width="100%" />
+</p>
+
+<p align="center">
+  <strong>Theo dõi quota Codex còn lại — riêng tư, trực quan và hoàn toàn trên máy local.</strong>
+</p>
+
+<p align="center">
+  <img alt="Windows" src="https://img.shields.io/badge/Windows-10%20%7C%2011-1677ff" />
+  <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-111827" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178c6" />
+  <img alt="Local only" src="https://img.shields.io/badge/runtime-local%20only-16a34a" />
+</p>
+
 Ứng dụng web chạy hoàn toàn trên máy local để quản lý nhiều tài khoản Codex và theo dõi quota còn lại từ một dashboard duy nhất.
 
 Ứng dụng giao tiếp trực tiếp với `codex app-server` qua JSONL/stdio. Không scraping giao diện ChatGPT, không dùng browser automation, không yêu cầu mật khẩu, mã 2FA, cookie hoặc access token của người dùng.
@@ -20,6 +35,10 @@
 - Chỉ lắng nghe tại `127.0.0.1:3000` và không gửi telemetry.
 
 ## Cách hoạt động
+
+<p align="center">
+  <img src="docs/assets/how-it-works.svg" alt="Sơ đồ hoạt động của Codex Usage Manager" width="100%" />
+</p>
 
 Mỗi tài khoản có một `CODEX_HOME` riêng tại:
 

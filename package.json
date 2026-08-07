@@ -13,7 +13,8 @@
     "setup": "tsx scripts/setup.ts",
     "desktop:shortcut": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/create-desktop-shortcut.ps1",
     "db:generate": "prisma generate",
-    "db:migrate": "tsx scripts/setup.ts"
+    "db:migrate": "tsx scripts/setup.ts",
+    "screenshots": "tsx scripts/capture-readme.ts"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.9.1",
@@ -41,6 +42,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
     "prisma": "^7.9.1",
+    "playwright": "^1.55.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.9",
     "typescript": "^5",

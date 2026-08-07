@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, CircleUserRound, Clock3, LogIn, Moon, Plus, RefreshCw, Search, Settings, Sun, Trash2, XCircle } from "lucide-react";
 import type { AccountView } from "@/lib/types";
+import { createDemoAccounts } from "@/lib/demo-accounts";
 
 const statusLabel: Record<string, string> = { active: "Đang hoạt động", login_required: "Cần đăng nhập lại", access_denied: "Bị từ chối truy cập", unsupported: "CLI chưa tương thích", error: "Lỗi", new: "Chưa kiểm tra" };
 const statusColor: Record<string, string> = { active: "text-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 dark:text-emerald-300", login_required: "text-amber-700 bg-amber-50 dark:bg-amber-950/60 dark:text-amber-300", access_denied: "text-red-700 bg-red-50 dark:bg-red-950/60 dark:text-red-300", unsupported: "text-slate-700 bg-slate-100 dark:bg-slate-700 dark:text-slate-200", error: "text-red-700 bg-red-50 dark:bg-red-950/60 dark:text-red-300", new: "text-slate-700 bg-slate-100 dark:bg-slate-700 dark:text-slate-200" };
@@ -31,6 +32,7 @@ export default function Home() {
   const [showAdd, setShowAdd] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [demoMode, setDemoMode] = useState(false);
   const refreshedOnLoad = useRef(false);
 
   const load = async () => { try { const data = await api("/api/accounts"); setAccounts(data.accounts); } catch (error) { setNotice(error instanceof Error ? error.message : "Không thể tải dữ liệu"); } };
@@ -38,6 +40,12 @@ export default function Home() {
     if (refreshedOnLoad.current) return;
     refreshedOnLoad.current = true;
     void (async () => {
+      const demo = new URLSearchParams(window.location.search).get("demo") === "1";
+      if (demo) {
+        setDemoMode(true);
+        setAccounts(createDemoAccounts());
+        return;
+      }
       try {
         await api("/api/csrf");
         await load();
@@ -53,7 +61,8 @@ export default function Home() {
   }, []);
   useEffect(() => {
     const saved = localStorage.getItem("codex-usage-theme");
-    const nextTheme = saved === "dark" || saved === "light" ? saved : window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    const requested = new URLSearchParams(window.location.search).get("theme");
+    const nextTheme = requested === "dark" || requested === "light" ? requested : saved === "dark" || saved === "light" ? saved : window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     document.documentElement.classList.toggle("dark", nextTheme === "dark");
     const update = window.setTimeout(() => setTheme(nextTheme), 0);
     return () => window.clearTimeout(update);
@@ -85,12 +94,13 @@ export default function Home() {
   };
   const summary = { total: accounts.length, active: accounts.filter((a) => a.status === "active").length, login: accounts.filter((a) => a.status === "login_required").length, near: accounts.filter((a) => percent(a) >= 80).length };
 
-  return <main className="min-h-screen bg-[#f6f9fc] text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
+  return <main data-demo-ready={demoMode ? "true" : undefined} className="min-h-screen bg-[#f6f9fc] text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
     <div className="mx-auto max-w-7xl px-5 py-8 lg:px-8">
       <header className="mb-8 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
         <div><div className="mb-2 flex items-center gap-3"><div className="rounded-2xl bg-blue-600 p-2.5 text-white"><CircleUserRound size={22} /></div><span className="text-sm font-semibold tracking-[0.2em] text-blue-600">CODEX LOCAL</span></div><h1 className="text-3xl font-bold tracking-tight">Codex Usage Manager</h1><p className="mt-1 text-slate-500">Theo dõi quota và trạng thái các tài khoản Codex trên máy này.</p></div>
         <div className="flex flex-wrap gap-3"><div className="inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-900" aria-label="Chọn giao diện"><button onClick={() => setThemeMode("light")} aria-pressed={theme === "light"} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${theme === "light" ? "bg-blue-600 text-white" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"}`}><Sun size={15} /> Light</button><button onClick={() => setThemeMode("dark")} aria-pressed={theme === "dark"} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${theme === "dark" ? "bg-blue-600 text-white" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"}`}><Moon size={15} /> Dark</button></div><button onClick={() => void run("all", async () => { await api("/api/accounts/refresh-all", { method: "POST" }); })} disabled={busy !== null} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold shadow-sm hover:border-blue-300 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900"><RefreshCw size={16} className={busy === "all" ? "animate-spin" : ""} /> Làm mới tất cả</button><button onClick={() => setShowAdd(true)} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"><Plus size={17} /> Thêm tài khoản</button></div>
       </header>
+      {demoMode && <div className="mb-5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700 dark:border-blue-900 dark:bg-blue-950/60 dark:text-blue-300">Chế độ minh họa · Toàn bộ tài khoản và quota bên dưới là dữ liệu giả.</div>}
       {notice && <div className="mb-5 flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"><span>{notice}</span><button onClick={() => setNotice(null)}><XCircle size={17} /></button></div>}
       <section className="mb-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Summary label="Tổng tài khoản" value={summary.total} icon={<CircleUserRound />} /><Summary label="Đang hoạt động" value={summary.active} icon={<CheckCircle2 />} tone="green" /><Summary label="Cần đăng nhập" value={summary.login} icon={<LogIn />} tone="amber" /><Summary label="Gần giới hạn (≥80%)" value={summary.near} icon={<AlertTriangle />} tone="red" /></section>
       <div className="mb-5 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-700 dark:bg-slate-900"><Search size={18} className="text-slate-400" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm theo tên hoặc email đã mask…" className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400" /><span className="text-xs text-slate-400">{filtered.length} tài khoản</span></div>

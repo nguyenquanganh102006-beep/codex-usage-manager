@@ -1,12 +1,18 @@
 # Codex Usage Manager
 
 <p align="center">
-  <img src="docs/assets/codex-usage-manager-hero.png" alt="Codex Usage Manager dashboard illustration" width="100%" />
+  <strong>Theo dõi quota Codex còn lại — riêng tư, trực quan và hoàn toàn trên máy local.</strong>
 </p>
 
 <p align="center">
-  <strong>Theo dõi quota Codex còn lại — riêng tư, trực quan và hoàn toàn trên máy local.</strong>
+  <img src="docs/assets/dashboard-light.png" alt="Codex Usage Manager ở Light mode với dữ liệu minh họa" width="100%" />
 </p>
+
+<details>
+  <summary><strong>Xem giao diện Dark mode</strong></summary>
+  <br />
+  <img src="docs/assets/dashboard-dark.png" alt="Codex Usage Manager ở Dark mode với dữ liệu minh họa" width="100%" />
+</details>
 
 <p align="center">
   <img alt="Windows" src="https://img.shields.io/badge/Windows-10%20%7C%2011-1677ff" />
@@ -149,7 +155,10 @@ Sau khi hoàn tất cài đặt lần đầu, chạy:
 
 ```powershell
 npm.cmd run desktop:shortcut
+npm.cmd run screenshots    # Chụp lại ảnh demo Light/Dark cho README
 ```
+
+Lệnh `screenshots` mở `/?demo=1` bằng Chromium headless và tạo ảnh từ dữ liệu giả. Hãy chạy ứng dụng trước; có thể đặt `CODEX_USAGE_SCREENSHOT_URL` nếu server không dùng cổng 3000. Chế độ demo không đọc tài khoản hoặc database thật.
 
 Desktop sẽ có shortcut **Codex Usage Manager**. Khi bấm đúp, launcher sẽ:
 

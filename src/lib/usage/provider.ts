@@ -3,10 +3,10 @@ import type { CodexUsageSnapshot, UsageWindow } from "@/lib/types";
 
 function toIso(seconds?: number | null) { return seconds ? new Date(seconds * 1000).toISOString() : undefined; }
 
-export async function fetchCodexUsage(accountId: string, codexHomeId: string): Promise<CodexUsageSnapshot> {
+export async function fetchCodexUsage(accountId: string, codexHomeId: string, options: { weeklyOnly?: boolean } = {}): Promise<CodexUsageSnapshot> {
   const checkedAt = new Date().toISOString();
   try {
-    const data = await readCodexData(codexHomeId);
+    const data = await readCodexData(codexHomeId, { includeUsage: !options.weeklyOnly });
     if (!data.account.account || data.account.account.type !== "chatgpt") {
       return { accountId, windows: [], checkedAt, source: "codex_app_server", status: "login_required", message: "Chưa đăng nhập Codex bằng ChatGPT." };
     }
@@ -26,9 +26,18 @@ export async function fetchCodexUsage(accountId: string, codexHomeId: string): P
         windows.push({ limitId, limitName: bucket.limitName ?? undefined, kind, usedPercent: used, remainingPercent: 100 - used, windowDurationMins: window.windowDurationMins ?? undefined, resetsAt: toIso(window.resetsAt) });
       }
     }
+    const selectedWindows = options.weeklyOnly
+      ? [...windows.reduce((longest, window) => {
+          const current = longest.get(window.limitId);
+          const duration = window.windowDurationMins ?? (window.kind === "secondary" ? Number.MAX_SAFE_INTEGER : 0);
+          const currentDuration = current?.windowDurationMins ?? (current?.kind === "secondary" ? Number.MAX_SAFE_INTEGER : 0);
+          if (!current || duration > currentDuration) longest.set(window.limitId, window);
+          return longest;
+        }, new Map<string, UsageWindow>()).values()]
+      : windows;
     const summary = data.usage?.summary;
     return {
-      accountId, email: data.account.account.email ?? null, plan: data.account.account.planType ?? undefined, windows,
+      accountId, email: data.account.account.email ?? null, plan: data.account.account.planType ?? undefined, windows: selectedWindows,
       tokenUsage: data.usage ? { ...summary, dailyUsageBuckets: data.usage.dailyUsageBuckets ?? undefined } : undefined,
       credits, resetCreditsAvailable: rate?.rateLimitResetCredits?.availableCount,
       rateLimitReachedType: reached, checkedAt, source: "codex_app_server", status: "available",

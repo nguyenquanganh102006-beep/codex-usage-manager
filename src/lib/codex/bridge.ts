@@ -102,14 +102,16 @@ export async function logoutAccount(codexHomeId: string) {
   try { await client.request("account/logout"); } finally { await client.close(); }
 }
 
-export async function readCodexData(codexHomeId: string) {
+export async function readCodexData(codexHomeId: string, options: { includeUsage?: boolean } = {}) {
   const client = await openCodexClient(codexHomeId);
   try {
     const account = await client.request<CodexAccountResponse>("account/read", { refreshToken: true });
     if (!account.account || account.account.type !== "chatgpt") return { account, rateLimits: null, usage: null };
     const rateLimits = await client.request<CodexRateLimitsResponse>("account/rateLimits/read");
     let usage: CodexTokenUsageResponse | null = null;
-    try { usage = await client.request<CodexTokenUsageResponse>("account/usage/read"); } catch { usage = null; }
+    if (options.includeUsage !== false) {
+      try { usage = await client.request<CodexTokenUsageResponse>("account/usage/read"); } catch { usage = null; }
+    }
     return { account, rateLimits, usage };
   } catch (error) {
     if (error instanceof JsonRpcError) throw new Error(sanitizeMessage(error.message));

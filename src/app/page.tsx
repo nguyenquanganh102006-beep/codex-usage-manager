@@ -110,13 +110,26 @@ export default function Home() {
       if (!completed) throw new Error("Đăng nhập hết thời gian chờ. Hãy thử lại.");
     });
   };
+  const refreshAllWeekly = async () => {
+    setBusy("all");
+    setNotice(null);
+    try {
+      const result = await api("/api/accounts/refresh-all", { method: "POST" });
+      await load();
+      setNotice(`Đã kiểm tra quota tuần: ${result.succeeded}/${result.total} tài khoản thành công.`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Không thể cập nhật quota tuần");
+    } finally {
+      setBusy(null);
+    }
+  };
   const summary = { total: accounts.length, active: accounts.filter((a) => a.status === "active").length, login: accounts.filter((a) => a.status === "login_required").length, near: accounts.filter((a) => percent(a) >= 80).length };
 
   return <main data-demo-ready={demoMode ? "true" : undefined} className="min-h-screen bg-[#f6f9fc] text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100">
     <div className="mx-auto max-w-7xl px-5 py-8 lg:px-8">
       <header className="mb-8 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
         <div><div className="mb-2 flex items-center gap-3"><div className="rounded-2xl bg-blue-600 p-2.5 text-white"><CircleUserRound size={22} /></div><span className="text-sm font-semibold tracking-[0.2em] text-blue-600">CODEX LOCAL</span></div><h1 className="text-3xl font-bold tracking-tight">Codex Usage Manager</h1><p className="mt-1 text-slate-500">Theo dõi quota và trạng thái các tài khoản Codex trên máy này.</p></div>
-        <div className="flex flex-wrap gap-3"><div className="inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-900" aria-label="Chọn giao diện"><button onClick={() => setThemeMode("light")} aria-pressed={theme === "light"} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${theme === "light" ? "bg-blue-600 text-white" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"}`}><Sun size={15} /> Light</button><button onClick={() => setThemeMode("dark")} aria-pressed={theme === "dark"} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${theme === "dark" ? "bg-blue-600 text-white" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"}`}><Moon size={15} /> Dark</button></div><button onClick={() => void run("all", async () => { await api("/api/accounts/refresh-all", { method: "POST" }); })} disabled={busy !== null} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold shadow-sm hover:border-blue-300 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900"><RefreshCw size={16} className={busy === "all" ? "animate-spin" : ""} /> Làm mới tất cả</button><button onClick={() => setShowAdd(true)} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"><Plus size={17} /> Thêm tài khoản</button></div>
+        <div className="flex flex-wrap gap-3"><div className="inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-900" aria-label="Chọn giao diện"><button onClick={() => setThemeMode("light")} aria-pressed={theme === "light"} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${theme === "light" ? "bg-blue-600 text-white" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"}`}><Sun size={15} /> Light</button><button onClick={() => setThemeMode("dark")} aria-pressed={theme === "dark"} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${theme === "dark" ? "bg-blue-600 text-white" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"}`}><Moon size={15} /> Dark</button></div><button onClick={() => void refreshAllWeekly()} disabled={busy !== null || accounts.length === 0} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold shadow-sm hover:border-blue-300 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900"><RefreshCw size={16} className={busy === "all" ? "animate-spin" : ""} /> {busy === "all" ? "Đang tải quota tuần…" : "Làm mới quota tuần"}</button><button onClick={() => setShowAdd(true)} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"><Plus size={17} /> Thêm tài khoản</button></div>
       </header>
       {demoMode && <div className="mb-5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700 dark:border-blue-900 dark:bg-blue-950/60 dark:text-blue-300">Chế độ minh họa · Toàn bộ tài khoản và quota bên dưới là dữ liệu giả.</div>}
       {notice && <div className="mb-5 flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"><span>{notice}</span><button onClick={() => setNotice(null)}><XCircle size={17} /></button></div>}

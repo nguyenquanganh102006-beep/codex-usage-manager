@@ -70,7 +70,7 @@ export async function getAccount(id: string) {
   return row ? accountView(row) : null;
 }
 
-export async function refreshAccount(id: string) {
+export async function refreshAccount(id: string, options: { weeklyOnly?: boolean } = {}) {
   const account = await prisma.account.findUnique({ where: { id } });
   if (!account) throw new Error("Account không tồn tại");
   const startedAt = new Date();
@@ -78,7 +78,7 @@ export async function refreshAccount(id: string) {
   try {
     let lastError: unknown;
     for (let attempt = 0; attempt < 3; attempt += 1) {
-      try { snapshot = await fetchCodexUsage(id, account.codexHomeId); lastError = undefined; break; }
+      try { snapshot = await fetchCodexUsage(id, account.codexHomeId, options); lastError = undefined; break; }
       catch (error) {
         lastError = error;
         const message = String(error).toLowerCase();

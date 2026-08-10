@@ -11,4 +11,27 @@ describe("Codex usage normalization", () => {
     expect(result.windows[0]).toMatchObject({ limitId: "five", usedPercent: 100, remainingPercent: 0 });
     expect(result.email).toBe("person@example.com");
   });
+
+  it("only keeps the longest quota window and skips token usage for weekly refresh", async () => {
+    vi.mocked(readCodexData).mockResolvedValue({
+      account: { account: { type: "chatgpt", planType: "plus" } },
+      rateLimits: {
+        rateLimitsByLimitId: {
+          codex: {
+            limitId: "codex",
+            primary: { usedPercent: 30, windowDurationMins: 300, resetsAt: 1 },
+            secondary: { usedPercent: 55, windowDurationMins: 10_080, resetsAt: 2 },
+          },
+        },
+      },
+      usage: null,
+    });
+
+    const result = await fetchCodexUsage("a", "h", { weeklyOnly: true });
+
+    expect(readCodexData).toHaveBeenLastCalledWith("h", { includeUsage: false });
+    expect(result.windows).toHaveLength(1);
+    expect(result.windows[0]).toMatchObject({ kind: "secondary", windowDurationMins: 10_080, remainingPercent: 45 });
+    expect(result.tokenUsage).toBeUndefined();
+  });
 });

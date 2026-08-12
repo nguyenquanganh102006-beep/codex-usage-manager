@@ -9,6 +9,7 @@ $runtimeRoot = Join-Path $runtimeBase "CodexUsageManager"
 $logRoot = Join-Path $runtimeRoot "logs"
 New-Item -ItemType Directory -Force -Path $logRoot | Out-Null
 $launcherLog = Join-Path $logRoot "desktop-launcher.log"
+$serverPidPath = Join-Path $runtimeRoot "server.pid"
 
 function Write-LauncherLog([string]$message) {
   Add-Content -LiteralPath $launcherLog -Value "$(Get-Date -Format o) $message" -Encoding UTF8
@@ -91,6 +92,17 @@ function Update-AppFromGitHub {
 }
 
 function Stop-RunningProjectServer {
+  if (Test-Path -LiteralPath $serverPidPath) {
+    $savedPid = [int](Get-Content -LiteralPath $serverPidPath -ErrorAction SilentlyContinue | Select-Object -First 1)
+    $savedProcess = Get-CimInstance Win32_Process -Filter "ProcessId = $savedPid" -ErrorAction SilentlyContinue
+    if ($null -ne $savedProcess -and $savedProcess.Name -eq "node.exe" -and $savedProcess.CommandLine -like "*$projectRoot*") {
+      Stop-Process -Id $savedPid -Force
+      Write-LauncherLog "Stopped previous project server from PID file"
+      Start-Sleep -Milliseconds 500
+    }
+    Remove-Item -LiteralPath $serverPidPath -Force -ErrorAction SilentlyContinue
+  }
+
   $connections = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue
   foreach ($connection in $connections) {
     $process = Get-CimInstance Win32_Process -Filter "ProcessId = $($connection.OwningProcess)" -ErrorAction SilentlyContinue
@@ -98,14 +110,16 @@ function Stop-RunningProjectServer {
       throw "Cổng 3000 đang do ứng dụng khác sử dụng; không thể tự khởi động lại an toàn."
     }
     Stop-Process -Id $connection.OwningProcess -Force
-    Write-LauncherLog "Stopped previous project server after update"
+    Write-LauncherLog "Stopped previous project server on port 3000"
   }
 }
 
 try {
   Write-LauncherLog "Launcher started"
   $update = Update-AppFromGitHub
-  if ($update.Updated -and (Test-AppReady)) { Stop-RunningProjectServer }
+  # Restart on every shortcut launch so the process reloads the current code and
+  # environment even when GitHub has no newer commit.
+  if (Test-AppReady) { Stop-RunningProjectServer }
   if (-not (Test-AppReady)) {
     $npmPath = "C:\Program Files\nodejs\npm.cmd"
     if (-not (Test-Path -LiteralPath $npmPath)) {
@@ -141,7 +155,8 @@ try {
     $nextCli = Join-Path $projectRoot "node_modules\next\dist\bin\next"
     if (-not (Test-Path -LiteralPath $nodePath)) { throw "Không tìm thấy node.exe." }
     if (-not (Test-Path -LiteralPath $nextCli)) { throw "Không tìm thấy Next.js CLI." }
-    Start-Process -FilePath $nodePath -ArgumentList @("`"$nextCli`"", "start", "--hostname", "127.0.0.1") -WorkingDirectory $projectRoot -WindowStyle Hidden -RedirectStandardOutput (Join-Path $logRoot "server-output.log") -RedirectStandardError (Join-Path $logRoot "server-error.log") | Out-Null
+    $serverProcess = Start-Process -FilePath $nodePath -ArgumentList @("`"$nextCli`"", "start", "--hostname", "127.0.0.1") -WorkingDirectory $projectRoot -WindowStyle Hidden -RedirectStandardOutput (Join-Path $logRoot "server-output.log") -RedirectStandardError (Join-Path $logRoot "server-error.log") -PassThru
+    Set-Content -LiteralPath $serverPidPath -Value $serverProcess.Id -Encoding ASCII
 
     $ready = $false
     for ($attempt = 0; $attempt -lt 60; $attempt++) {

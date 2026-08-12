@@ -164,12 +164,16 @@ Lệnh `screenshots` mở `/?demo=1` bằng Chromium headless và tạo ảnh t�
 
 Desktop sẽ có shortcut **Codex Usage Manager**. Khi bấm đúp, launcher sẽ:
 
-1. kiểm tra ứng dụng đã chạy hay chưa;
-2. tự cài dependency nếu chưa có `node_modules`;
-3. chạy setup nếu chưa có `.env`;
-4. build lại khi source mới hơn bản build;
-5. khởi động server ẩn tại `127.0.0.1:3000`;
-6. mở ứng dụng trong trình duyệt mặc định.
+1. kiểm tra bản mới từ nhánh `main` của repository GitHub chính thức của dự án;
+2. tự cập nhật bằng fast-forward nếu repository local không có file đang sửa;
+3. khởi động lại đúng server của dự án nếu vừa cập nhật;
+4. tự cài dependency nếu `package-lock.json` thay đổi hoặc chưa có `node_modules`;
+5. chạy setup nếu chưa có `.env`;
+6. build lại khi source mới hơn bản build;
+7. khởi động server ẩn tại `127.0.0.1:3000`;
+8. mở ứng dụng trong trình duyệt mặc định.
+
+Nếu mất mạng, GitHub không phản hồi hoặc repository đang có thay đổi local, launcher bỏ qua cập nhật và tiếp tục chạy phiên bản hiện tại. Nó không dùng force pull, không reset và không ghi đè file đang sửa. Có thể tắt kiểm tra cập nhật bằng biến môi trường hệ thống `CODEX_USAGE_SKIP_UPDATE=1`.
 
 Log của launcher và server nằm tại:
 

@@ -99,7 +99,9 @@ Không dùng URL VS Code Dev Tunnel (`*.devtunnels.ms`) hoặc cổng Forwarded 
 
 ## Cấu hình Codex CLI
 
-Ứng dụng tự tìm lệnh `codex` trong `PATH`. Nếu hiện thông báo **Không tìm thấy Codex CLI**, hãy tạo file `.env` ở thư mục gốc dự án và đặt đường dẫn tuyệt đối:
+Ứng dụng tự tìm lệnh `codex` trong `PATH`, sau đó tự dò bản Codex đi kèm extension OpenAI mới nhất trong VS Code hoặc VS Code Insiders. Vì vậy thông thường không cần đặt `CODEX_CLI_PATH`.
+
+Nếu vẫn hiện thông báo **Không tìm thấy Codex CLI**, hãy tạo file `.env` ở thư mục gốc dự án và đặt đường dẫn tuyệt đối:
 
 ```env
 CODEX_CLI_PATH=C:/duong-dan-den/codex.exe
@@ -111,7 +113,7 @@ Nếu Codex được cài cùng extension OpenAI trong VS Code, đường dẫn 
 CODEX_CLI_PATH=C:/Users/<ten-user>/.vscode/extensions/openai.chatgpt-<version>-win32-x64/bin/windows-x86_64/codex.exe
 ```
 
-Tên thư mục phiên bản có thể thay đổi sau khi extension cập nhật. Sau khi sửa `.env`, hãy dừng server bằng `Ctrl+C` rồi chạy lại:
+Tên thư mục phiên bản có thể thay đổi sau khi extension cập nhật. Nếu đường dẫn override cũ không còn tồn tại, ứng dụng sẽ bỏ qua nó và tự dò phiên bản đang cài. Sau khi sửa `.env`, hãy dừng server bằng `Ctrl+C` rồi chạy lại:
 
 ```powershell
 npm.cmd run dev

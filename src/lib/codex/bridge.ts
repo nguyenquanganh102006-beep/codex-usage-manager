@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import os from "node:os";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { getCodexHome } from "@/lib/data-root";
@@ -51,9 +52,13 @@ export async function ensureCodexHome(codexHomeId: string) {
 export async function findCodexExecutable() {
   const configured = process.env.CODEX_CLI_PATH;
   if (configured) {
-    const resolved = await fs.realpath(configured);
-    if (process.platform === "win32" && path.basename(resolved).toLowerCase() !== "codex.exe") throw new Error("CODEX_CLI_PATH phải trỏ tới codex.exe");
-    return resolved;
+    try {
+      const resolved = await fs.realpath(configured);
+      if (process.platform === "win32" && path.basename(resolved).toLowerCase() !== "codex.exe") throw new Error("CODEX_CLI_PATH phải trỏ tới codex.exe");
+      return resolved;
+    } catch (error) {
+      if (!(error instanceof Error && "code" in error && error.code === "ENOENT")) throw error;
+    }
   }
   try {
     const result = await execFileAsync(process.platform === "win32" ? "where.exe" : "which", ["codex"]);
@@ -62,9 +67,28 @@ export async function findCodexExecutable() {
     const resolved = await fs.realpath(candidate);
     if (process.platform === "win32" && path.basename(resolved).toLowerCase() !== "codex.exe") throw new Error("Codex CLI không phải codex.exe hợp lệ");
     return resolved;
-  } catch {
-    throw new Error("Không tìm thấy Codex CLI. Hãy cài Codex CLI hoặc cấu hình CODEX_CLI_PATH.");
+  } catch { /* Thử các thư mục extension VS Code đã biết ở dưới. */ }
+
+  if (process.platform === "win32") {
+    const extensionRoots = [path.join(os.homedir(), ".vscode", "extensions"), path.join(os.homedir(), ".vscode-insiders", "extensions")];
+    const candidates: Array<{ file: string; modifiedAt: number }> = [];
+    for (const root of extensionRoots) {
+      const entries = await fs.readdir(/*turbopackIgnore: true*/ root, { withFileTypes: true }).catch(() => []);
+      for (const entry of entries) {
+        if (!entry.isDirectory() || !entry.name.startsWith("openai.chatgpt-")) continue;
+        const file = path.join(root, entry.name, "bin", "windows-x86_64", "codex.exe");
+        try {
+          const stat = await fs.stat(file);
+          if (stat.isFile()) candidates.push({ file, modifiedAt: stat.mtimeMs });
+        } catch { /* Bỏ qua phiên bản extension đang cài dở hoặc đã bị xóa. */ }
+      }
+    }
+    candidates.sort((a, b) => b.modifiedAt - a.modifiedAt);
+    if (candidates[0]) return fs.realpath(candidates[0].file);
   }
+
+  const configuredHint = configured ? " CODEX_CLI_PATH hiện tại không còn tồn tại; hãy xóa biến này để ứng dụng tự dò lại." : "";
+  throw new Error(`Không tìm thấy Codex CLI. Hãy cài Codex CLI hoặc cấu hình CODEX_CLI_PATH.${configuredHint}`);
 }
 
 export async function openCodexClient(codexHomeId: string) {

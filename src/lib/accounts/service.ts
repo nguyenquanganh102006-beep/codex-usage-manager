@@ -42,6 +42,8 @@ function accountView(account: any): AccountView {
   return {
     id: account.id, displayName: account.displayName, maskedEmail: account.maskedEmail,
     status: account.status.toLowerCase(), plan: account.currentPlan,
+    planExpiresAt: account.planExpiresAt?.toISOString() ?? null,
+    resetCreditsExpiresAt: account.resetCreditsExpiresAt?.toISOString() ?? null,
     lastCheckedAt: account.lastCheckedAt?.toISOString() ?? null,
     lastSuccessAt: account.lastSuccessAt?.toISOString() ?? null,
     lastErrorMessage: account.lastErrorMessage,

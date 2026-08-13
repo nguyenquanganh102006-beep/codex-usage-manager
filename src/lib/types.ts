@@ -53,6 +53,8 @@ export interface AccountView {
   maskedEmail?: string | null;
   status: AccountStatus;
   plan?: string | null;
+  planExpiresAt?: string | null;
+  resetCreditsExpiresAt?: string | null;
   lastCheckedAt?: string | null;
   lastSuccessAt?: string | null;
   lastErrorMessage?: string | null;

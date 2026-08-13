@@ -42,6 +42,10 @@ async function main() {
     CREATE INDEX IF NOT EXISTS DailyToken_account_date ON DailyTokenUsage(accountId, date);
     CREATE INDEX IF NOT EXISTS PlanEvent_account_detected ON PlanEvent(accountId, detectedAt);
     CREATE INDEX IF NOT EXISTS CheckAttempt_account_started ON CheckAttempt(accountId, startedAt);`);
+  const accountColumns = db.prepare("PRAGMA table_info(Account)").all() as Array<{ name: string }>;
+  const accountColumnNames = new Set(accountColumns.map((column) => column.name));
+  if (!accountColumnNames.has("planExpiresAt")) db.exec("ALTER TABLE Account ADD COLUMN planExpiresAt DATETIME");
+  if (!accountColumnNames.has("resetCreditsExpiresAt")) db.exec("ALTER TABLE Account ADD COLUMN resetCreditsExpiresAt DATETIME");
   db.close();
 
   const codex = process.env.CODEX_CLI_PATH ?? "codex";

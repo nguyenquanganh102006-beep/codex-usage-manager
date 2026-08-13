@@ -46,6 +46,8 @@ model Account {
   codexHomeId      String               @unique
   status           AccountStatus        @default(NEW)
   currentPlan      String?
+  planExpiresAt    DateTime?
+  resetCreditsExpiresAt DateTime?
   previousPlan     String?
   lastPlanChangeAt DateTime?
   lastCheckedAt    DateTime?

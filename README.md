@@ -33,6 +33,8 @@
 - Hiển thị gói hiện tại, trạng thái tài khoản và email đã che bớt.
 - Hiển thị phần trăm quota **còn lại** cho từng cửa sổ giới hạn.
 - Hiển thị thời gian còn lại trước khi quota reset.
+- Hiển thị số reset credits còn lại khi Codex App Server cung cấp dữ liệu.
+- Cho nhập ngày hết hạn gói và hạn reset credits theo từng tài khoản, sau đó tự tính số ngày còn lại.
 - Lưu snapshot usage, lịch sử thay đổi gói và dữ liệu token khi Codex trả về.
 - Cảnh báo khi gần hết quota, cần đăng nhập lại hoặc không thể truy cập.
 - Hỗ trợ giao diện Light và Dark.
@@ -227,7 +229,7 @@ Các nguyên tắc chính:
 
 - Codex App Server có thể thay đổi giữa các phiên bản CLI.
 - OpenAI có thể không trả về token usage hoặc một số trường quota cho mọi tài khoản.
-- Ứng dụng không biết ngày hết hạn Plus; nó chỉ phát hiện khi loại gói được server trả về thay đổi.
+- Codex App Server không trả ngày hết hạn Plus/Pro hoặc hạn reset credits. Hai ngày này được người dùng nhập thủ công và luôn có nhãn `tự nhập`; ứng dụng chỉ tự tính số ngày còn lại.
 - `401`, `403` hoặc lỗi refresh session chỉ được hiển thị là cần đăng nhập lại hoặc không truy cập được.
 - Ứng dụng không tiêu thụ reset credits và không tự gửi prompt để kiểm tra tài khoản.
 

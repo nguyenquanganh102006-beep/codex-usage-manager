@@ -103,11 +103,13 @@ function Stop-RunningProjectServer {
     Remove-Item -LiteralPath $serverPidPath -Force -ErrorAction SilentlyContinue
   }
 
-  $connections = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue
+  # The app binds only to IPv4 loopback. Ignore IPv6 ::1 listeners such as
+  # VS Code Dev Tunnels, which may legitimately use the same port number.
+  $connections = Get-NetTCPConnection -LocalAddress "127.0.0.1" -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue
   foreach ($connection in $connections) {
     $process = Get-CimInstance Win32_Process -Filter "ProcessId = $($connection.OwningProcess)" -ErrorAction SilentlyContinue
     if ($null -eq $process -or $process.Name -ne "node.exe" -or $process.CommandLine -notlike "*$projectRoot*") {
-      throw "Cổng 3000 đang do ứng dụng khác sử dụng; không thể tự khởi động lại an toàn."
+      throw "Cong 127.0.0.1:3000 dang duoc ung dung khac su dung; khong the khoi dong lai an toan."
     }
     Stop-Process -Id $connection.OwningProcess -Force
     Write-LauncherLog "Stopped previous project server on port 3000"
@@ -124,18 +126,18 @@ try {
     $npmPath = "C:\Program Files\nodejs\npm.cmd"
     if (-not (Test-Path -LiteralPath $npmPath)) {
       $npmCommand = Get-Command npm.cmd -ErrorAction SilentlyContinue
-      if ($null -eq $npmCommand) { throw "Không tìm thấy Node.js/npm. Hãy cài Node.js LTS trước." }
+      if ($null -eq $npmCommand) { throw "Khong tim thay Node.js/npm. Hay cai Node.js LTS truoc." }
       $npmPath = $npmCommand.Source
     }
 
     if ($update.DependenciesChanged -or -not (Test-Path -LiteralPath (Join-Path $projectRoot "node_modules"))) {
       $install = Start-Process -FilePath $npmPath -ArgumentList @("install") -WorkingDirectory $projectRoot -WindowStyle Hidden -Wait -PassThru
-      if ($install.ExitCode -ne 0) { throw "npm install thất bại." }
+      if ($install.ExitCode -ne 0) { throw "npm install that bai." }
     }
 
     if (-not (Test-Path -LiteralPath (Join-Path $projectRoot ".env"))) {
       $setup = Start-Process -FilePath $npmPath -ArgumentList @("run", "setup") -WorkingDirectory $projectRoot -WindowStyle Hidden -Wait -PassThru
-      if ($setup.ExitCode -ne 0) { throw "npm run setup thất bại." }
+      if ($setup.ExitCode -ne 0) { throw "npm run setup that bai." }
     }
 
     $buildIdPath = Join-Path $projectRoot ".next\BUILD_ID"
@@ -148,13 +150,13 @@ try {
     }
     if ($needsBuild) {
       $build = Start-Process -FilePath $npmPath -ArgumentList @("run", "build") -WorkingDirectory $projectRoot -WindowStyle Hidden -Wait -PassThru
-      if ($build.ExitCode -ne 0) { throw "Không thể build ứng dụng." }
+      if ($build.ExitCode -ne 0) { throw "Khong the build ung dung." }
     }
 
     $nodePath = Join-Path (Split-Path -Parent $npmPath) "node.exe"
     $nextCli = Join-Path $projectRoot "node_modules\next\dist\bin\next"
-    if (-not (Test-Path -LiteralPath $nodePath)) { throw "Không tìm thấy node.exe." }
-    if (-not (Test-Path -LiteralPath $nextCli)) { throw "Không tìm thấy Next.js CLI." }
+    if (-not (Test-Path -LiteralPath $nodePath)) { throw "Khong tim thay node.exe." }
+    if (-not (Test-Path -LiteralPath $nextCli)) { throw "Khong tim thay Next.js CLI." }
     $serverProcess = Start-Process -FilePath $nodePath -ArgumentList @("`"$nextCli`"", "start", "--hostname", "127.0.0.1") -WorkingDirectory $projectRoot -WindowStyle Hidden -RedirectStandardOutput (Join-Path $logRoot "server-output.log") -RedirectStandardError (Join-Path $logRoot "server-error.log") -PassThru
     Set-Content -LiteralPath $serverPidPath -Value $serverProcess.Id -Encoding ASCII
 
@@ -163,7 +165,7 @@ try {
       Start-Sleep -Milliseconds 500
       if (Test-AppReady) { $ready = $true; break }
     }
-    if (-not $ready) { throw "Server không khởi động được trong 30 giây. Hãy kiểm tra cổng 3000." }
+    if (-not $ready) { throw "Server khong khoi dong duoc trong 30 giay. Hay kiem tra cong 3000." }
   }
 
   if ($env:CODEX_USAGE_SKIP_BROWSER -ne "1") {

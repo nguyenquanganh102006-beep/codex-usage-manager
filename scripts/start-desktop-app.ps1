@@ -141,7 +141,9 @@ try {
     }
 
     $buildIdPath = Join-Path $projectRoot ".next\BUILD_ID"
-    $needsBuild = -not (Test-Path -LiteralPath $buildIdPath)
+    # A Git fast-forward can preserve file timestamps older than BUILD_ID. Always
+    # rebuild after an app update so the running bundle cannot lag behind source.
+    $needsBuild = $update.Updated -or -not (Test-Path -LiteralPath $buildIdPath)
     if (-not $needsBuild) {
       $buildTime = (Get-Item -LiteralPath $buildIdPath).LastWriteTimeUtc
       $sourceRoots = @((Join-Path $projectRoot "src"), (Join-Path $projectRoot "prisma"), (Join-Path $projectRoot "next.config.ts"), (Join-Path $projectRoot "package.json"))

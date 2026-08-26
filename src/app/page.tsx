@@ -36,14 +36,13 @@ function formatWindowDuration(minutes?: number) {
 }
 function visibleQuotaWindows(account: AccountView) {
   const windows = account.latestSnapshot?.windows ?? [];
-  const longestByLimit = new Map<string, (typeof windows)[number]>();
-  for (const window of windows) {
-    const current = longestByLimit.get(window.limitId);
-    const duration = window.windowDurationMins ?? (window.kind === "secondary" ? Number.MAX_SAFE_INTEGER : 0);
-    const currentDuration = current?.windowDurationMins ?? (current?.kind === "secondary" ? Number.MAX_SAFE_INTEGER : 0);
-    if (!current || duration > currentDuration) longestByLimit.set(window.limitId, window);
-  }
-  return [...longestByLimit.values()];
+  const codexWindows = windows.filter((window) => window.limitId.toLowerCase() === "codex");
+  return [...(codexWindows.length ? codexWindows : windows)].sort((a, b) => (a.windowDurationMins ?? 0) - (b.windowDurationMins ?? 0));
+}
+function quotaLabel(window: NonNullable<AccountView["latestSnapshot"]>["windows"][number]) {
+  if (window.windowDurationMins === 300) return "Quota 5 giờ";
+  if (window.windowDurationMins === 10_080) return "Quota tuần";
+  return window.limitName ?? window.limitId;
 }
 function percent(account: AccountView) { const windows = visibleQuotaWindows(account); return windows.length ? Math.max(...windows.map((window) => window.usedPercent)) : 0; }
 
@@ -117,15 +116,15 @@ export default function Home() {
       if (!completed) throw new Error("Đăng nhập hết thời gian chờ. Hãy thử lại.");
     });
   };
-  const refreshAllWeekly = async () => {
+  const refreshAllQuotas = async () => {
     setBusy("all");
     setNotice(null);
     try {
       const result = await api("/api/accounts/refresh-all", { method: "POST" });
       await load();
-      setNotice(`Đã kiểm tra quota tuần: ${result.succeeded}/${result.total} tài khoản thành công.`);
+      setNotice(`Đã kiểm tra quota 5 giờ và quota tuần: ${result.succeeded}/${result.total} tài khoản thành công.`);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Không thể cập nhật quota tuần");
+      setNotice(error instanceof Error ? error.message : "Không thể cập nhật quota");
     } finally {
       setBusy(null);
     }
@@ -154,7 +153,7 @@ export default function Home() {
     <div className="mx-auto max-w-7xl px-5 py-8 lg:px-8">
       <header className="mb-8 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
         <div><div className="mb-2 flex items-center gap-3"><div className="rounded-2xl bg-blue-600 p-2.5 text-white"><CircleUserRound size={22} /></div><span className="text-sm font-semibold tracking-[0.2em] text-blue-600">CODEX LOCAL</span></div><h1 className="text-3xl font-bold tracking-tight">Codex Usage Manager</h1><p className="mt-1 text-slate-500">Theo dõi quota và trạng thái các tài khoản Codex trên máy này.</p></div>
-        <div className="flex flex-wrap gap-3"><div className="inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-900" aria-label="Chọn giao diện"><button onClick={() => setThemeMode("light")} aria-pressed={theme === "light"} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${theme === "light" ? "bg-blue-600 text-white" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"}`}><Sun size={15} /> Light</button><button onClick={() => setThemeMode("dark")} aria-pressed={theme === "dark"} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${theme === "dark" ? "bg-blue-600 text-white" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"}`}><Moon size={15} /> Dark</button></div><button onClick={() => void refreshAllWeekly()} disabled={busy !== null || accounts.length === 0} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold shadow-sm hover:border-blue-300 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900"><RefreshCw size={16} className={busy === "all" ? "animate-spin" : ""} /> {busy === "all" ? "Đang tải quota tuần…" : "Làm mới quota tuần"}</button><button onClick={() => setShowAdd(true)} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"><Plus size={17} /> Thêm tài khoản</button></div>
+        <div className="flex flex-wrap gap-3"><div className="inline-flex rounded-xl border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-900" aria-label="Chọn giao diện"><button onClick={() => setThemeMode("light")} aria-pressed={theme === "light"} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${theme === "light" ? "bg-blue-600 text-white" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"}`}><Sun size={15} /> Light</button><button onClick={() => setThemeMode("dark")} aria-pressed={theme === "dark"} className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${theme === "dark" ? "bg-blue-600 text-white" : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"}`}><Moon size={15} /> Dark</button></div><button onClick={() => void refreshAllQuotas()} disabled={busy !== null || accounts.length === 0} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold shadow-sm hover:border-blue-300 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-900"><RefreshCw size={16} className={busy === "all" ? "animate-spin" : ""} /> {busy === "all" ? "Đang tải quota…" : "Làm mới tất cả quota"}</button><button onClick={() => setShowAdd(true)} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"><Plus size={17} /> Thêm tài khoản</button></div>
       </header>
       {demoMode && <div className="mb-5 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700 dark:border-blue-900 dark:bg-blue-950/60 dark:text-blue-300">Chế độ minh họa · Toàn bộ tài khoản và quota bên dưới là dữ liệu giả.</div>}
       {notice && <div className="mb-5 flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"><span>{notice}</span><button onClick={() => setNotice(null)}><XCircle size={17} /></button></div>}
@@ -180,7 +179,7 @@ function AccountCard({ account, busy, onRefresh, onLogin, onEditExpirations, onD
       <div className="flex items-center justify-between gap-3"><span className="text-slate-500 dark:text-slate-400">Số lần reset còn lại</span><span className="font-semibold">{snapshot?.resetCreditsAvailable ?? "OpenAI không trả về"}</span></div>
       <div className="flex items-center justify-between gap-3"><span className="text-slate-500 dark:text-slate-400">Hạn reset credits (tự nhập)</span><span className="font-semibold">{formatExpiry(account.resetCreditsExpiresAt)}</span></div>
     </div>
-    {windows.length ? <div className="mt-4 space-y-4">{windows.map((window) => <div key={`${window.limitId}-${window.kind}`}><div className="mb-1.5 flex justify-between text-xs"><span className="font-medium text-slate-600 dark:text-slate-300">{window.limitName ?? window.limitId}{window.windowDurationMins ? ` · ${formatWindowDuration(window.windowDurationMins)}` : ""}</span><span className="font-semibold">{window.remainingPercent}% còn lại</span></div><div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700"><div className={`h-full rounded-full ${window.remainingPercent <= 20 ? "bg-amber-500" : "bg-blue-500"}`} style={{ width: `${window.remainingPercent}%` }} /></div><div className="mt-1 flex items-center justify-between text-xs text-slate-400"><span>Đã dùng {window.usedPercent}%</span><span className="inline-flex items-center gap-1"><Clock3 size={12} /> {window.resetsAt ? `reset ${formatDate(window.resetsAt)} · ${formatResetRemaining(window.resetsAt)}` : "OpenAI không trả về dữ liệu reset"}</span></div></div>)}</div> : <div className="mt-5 rounded-xl bg-slate-50 px-3 py-4 text-sm text-slate-500 dark:bg-slate-800 dark:text-slate-400">{snapshot?.message ?? "OpenAI không trả về dữ liệu quota."}</div>}
+    {windows.length ? <div className="mt-4 space-y-4">{windows.map((window) => <div key={`${window.limitId}-${window.kind}`}><div className="mb-1.5 flex justify-between text-xs"><span className="font-medium text-slate-600 dark:text-slate-300">{quotaLabel(window)}{window.windowDurationMins && window.windowDurationMins !== 300 && window.windowDurationMins !== 10_080 ? ` · ${formatWindowDuration(window.windowDurationMins)}` : ""}</span><span className="font-semibold">{window.remainingPercent}% còn lại</span></div><div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700"><div className={`h-full rounded-full ${window.remainingPercent <= 20 ? "bg-amber-500" : "bg-blue-500"}`} style={{ width: `${window.remainingPercent}%` }} /></div><div className="mt-1 flex items-center justify-between text-xs text-slate-400"><span>Đã dùng {window.usedPercent}%</span><span className="inline-flex items-center gap-1"><Clock3 size={12} /> {window.resetsAt ? `reset ${formatDate(window.resetsAt)} · ${formatResetRemaining(window.resetsAt)}` : "OpenAI không trả về dữ liệu reset"}</span></div></div>)}</div> : <div className="mt-5 rounded-xl bg-slate-50 px-3 py-4 text-sm text-slate-500 dark:bg-slate-800 dark:text-slate-400">{snapshot?.message ?? "OpenAI không trả về dữ liệu quota."}</div>}
     <div className="mt-5 flex items-center justify-between text-xs text-slate-400"><span>Nguồn: {snapshot?.source ?? "codex_app_server"} · Kiểm tra: {formatDate(account.lastCheckedAt)}</span><div className="flex gap-1"><button title="Nhập hạn gói và reset credits" onClick={onEditExpirations} className="rounded-lg p-2 text-slate-500 hover:bg-blue-50 hover:text-blue-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-blue-400"><Pencil size={16} /></button><button title="Đăng nhập" onClick={onLogin} className="rounded-lg p-2 text-slate-500 hover:bg-blue-50 hover:text-blue-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-blue-400"><LogIn size={16} /></button><button title="Làm mới" onClick={onRefresh} disabled={busy} className="rounded-lg p-2 text-slate-500 hover:bg-blue-50 hover:text-blue-600 disabled:opacity-50 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-blue-400"><RefreshCw size={16} className={busy ? "animate-spin" : ""} /></button><button title="Xóa session" onClick={onDelete} className="rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-red-400"><Trash2 size={16} /></button></div></div>
   </article>;
 }

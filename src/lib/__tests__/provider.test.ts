@@ -34,4 +34,23 @@ describe("Codex usage normalization", () => {
     expect(result.windows[0]).toMatchObject({ kind: "secondary", windowDurationMins: 10_080, remainingPercent: 45 });
     expect(result.tokenUsage).toBeUndefined();
   });
+
+  it("keeps both 5-hour and weekly windows for a full refresh", async () => {
+    vi.mocked(readCodexData).mockResolvedValue({
+      account: { account: { type: "chatgpt", planType: "plus" } },
+      rateLimits: {
+        rateLimits: {
+          limitId: "codex",
+          primary: { usedPercent: 20, windowDurationMins: 300, resetsAt: 1 },
+          secondary: { usedPercent: 40, windowDurationMins: 10_080, resetsAt: 2 },
+        },
+      },
+      usage: null,
+    });
+
+    const result = await fetchCodexUsage("a", "h");
+
+    expect(result.windows).toHaveLength(2);
+    expect(result.windows.map((window) => window.windowDurationMins)).toEqual([300, 10_080]);
+  });
 });

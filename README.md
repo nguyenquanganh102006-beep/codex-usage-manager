@@ -31,7 +31,7 @@
 
 - Quản lý nhiều tài khoản Codex bằng các phiên đăng nhập được cô lập.
 - Hiển thị gói hiện tại, trạng thái tài khoản và email đã che bớt.
-- Hiển thị phần trăm quota **còn lại** cho từng cửa sổ giới hạn.
+- Hiển thị phần trăm quota **còn lại** cho cả cửa sổ 5 giờ và hàng tuần khi OpenAI trả về.
 - Hiển thị thời gian còn lại trước khi quota reset.
 - Hiển thị số reset credits còn lại khi Codex App Server cung cấp dữ liệu.
 - Cho nhập ngày hết hạn gói và hạn reset credits theo từng tài khoản, sau đó tự tính số ngày còn lại.

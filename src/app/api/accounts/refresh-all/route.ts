@@ -10,7 +10,7 @@ export async function POST(request: Request) {
 
     for (const [index, account] of accounts.entries()) {
       try {
-        const refreshed = await refreshAccount(account.id, { weeklyOnly: true });
+        const refreshed = await refreshAccount(account.id);
         results.push({ accountId: account.id, success: refreshed?.latestSnapshot?.status === "available" });
       } catch {
         results.push({ accountId: account.id, success: false });

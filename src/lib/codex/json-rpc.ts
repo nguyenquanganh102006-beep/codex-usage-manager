@@ -41,7 +41,7 @@ export class CodexRpcClient {
     return () => this.notifications.delete(handler);
   }
 
-  async request<T>(method: string, params?: unknown, timeoutMs = 20_000): Promise<T> {
+  async request<T>(method: string, params?: unknown, timeoutMs = 30_000): Promise<T> {
     const id = this.nextId++;
     const payload = JSON.stringify({ method, id, ...(params === undefined ? {} : { params }) });
     return new Promise<T>((resolve, reject) => {

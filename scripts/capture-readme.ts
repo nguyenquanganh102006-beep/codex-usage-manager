@@ -2,7 +2,7 @@ import { chromium } from "playwright";
 import fs from "node:fs/promises";
 import path from "node:path";
 
-const baseUrl = process.env.CODEX_USAGE_SCREENSHOT_URL ?? "http://127.0.0.1:3000";
+const baseUrl = process.env.CODEX_USAGE_SCREENSHOT_URL ?? "http://127.0.0.1:4000";
 const outputDir = path.join(process.cwd(), "docs", "assets");
 
 async function main() {

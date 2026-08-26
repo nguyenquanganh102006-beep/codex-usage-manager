@@ -51,7 +51,7 @@
       <text x="1028" y="220">Codex Home riêng</text>
     </g>
     <g fill="#91b7e7" font-size="13">
-      <text x="165" y="242">127.0.0.1:3000</text>
+      <text x="165" y="242">127.0.0.1:4000</text>
       <text x="450" y="242">SQLite + lịch sử</text>
       <text x="735" y="242">JSONL qua stdio</text>
       <text x="1028" y="242">Một thư mục / tài khoản</text>

@@ -40,7 +40,7 @@
 - Hỗ trợ giao diện Light và Dark.
 - Cập nhật dữ liệu khi tải lại trang hoặc nhấn `F5`; không tự động gọi kiểm tra theo chu kỳ.
 - Có shortcut ngoài Desktop để tự khởi động server và mở ứng dụng.
-- Chỉ lắng nghe tại `127.0.0.1:3000` và không gửi telemetry.
+- Chỉ lắng nghe tại `127.0.0.1:4000` và không gửi telemetry.
 
 ## Cách hoạt động
 
@@ -94,7 +94,7 @@ npm.cmd run dev
 Sau đó mở:
 
 ```text
-http://127.0.0.1:3000
+http://127.0.0.1:4000
 ```
 
 Không dùng URL VS Code Dev Tunnel (`*.devtunnels.ms`) hoặc cổng Forwarded trong VS Code. Dev Tunnel yêu cầu đăng nhập GitHub riêng và không liên quan đến phiên đăng nhập Codex.
@@ -162,7 +162,7 @@ npm.cmd run desktop:shortcut
 npm.cmd run screenshots    # Chụp lại ảnh demo Light/Dark cho README
 ```
 
-Lệnh `screenshots` mở `/?demo=1` bằng Chromium headless và tạo ảnh từ dữ liệu giả. Hãy chạy ứng dụng trước; có thể đặt `CODEX_USAGE_SCREENSHOT_URL` nếu server không dùng cổng 3000. Chế độ demo không đọc tài khoản hoặc database thật.
+Lệnh `screenshots` mở `/?demo=1` bằng Chromium headless và tạo ảnh từ dữ liệu giả. Hãy chạy ứng dụng trước; có thể đặt `CODEX_USAGE_SCREENSHOT_URL` nếu server không dùng cổng 4000. Chế độ demo không đọc tài khoản hoặc database thật.
 
 Desktop sẽ có shortcut **Codex Usage Manager**. Khi bấm đúp, launcher sẽ:
 
@@ -172,7 +172,7 @@ Desktop sẽ có shortcut **Codex Usage Manager**. Khi bấm đúp, launcher s�
 4. tự cài dependency nếu `package-lock.json` thay đổi hoặc chưa có `node_modules`;
 5. chạy setup nếu chưa có `.env`;
 6. build lại khi source mới hơn bản build;
-7. khởi động server ẩn tại `127.0.0.1:3000`;
+7. khởi động server ẩn tại `127.0.0.1:4000`;
 8. mở ứng dụng trong trình duyệt mặc định.
 
 Nếu mất mạng, GitHub không phản hồi hoặc repository đang có thay đổi local, launcher bỏ qua cập nhật và tiếp tục chạy phiên bản hiện tại. Nó không dùng force pull, không reset và không ghi đè file đang sửa. Có thể tắt kiểm tra cập nhật bằng biến môi trường hệ thống `CODEX_USAGE_SKIP_UPDATE=1`.
@@ -245,9 +245,9 @@ Chạy `codex --version`. Nếu lệnh không hoạt động, đặt `CODEX_CLI_
 
 ### Đăng nhập thành công nhưng dashboard vẫn báo cần đăng nhập
 
-Đóng tab OAuth, quay lại đúng `http://127.0.0.1:3000`, chờ vài giây rồi tải lại trang. Không mở ứng dụng qua Dev Tunnel.
+Đóng tab OAuth, quay lại đúng `http://127.0.0.1:4000`, chờ vài giây rồi tải lại trang. Không mở ứng dụng qua Dev Tunnel.
 
-### Cổng 3000 đang được sử dụng
+### Cổng 4000 đang được sử dụng
 
 Đóng tiến trình Next.js cũ hoặc tab terminal đang chạy dự án, sau đó khởi động lại shortcut.
 

@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 $projectRoot = Split-Path -Parent $PSScriptRoot
-$appUrl = "http://127.0.0.1:3000"
+$appUrl = "http://127.0.0.1:4000"
 $healthUrl = "$appUrl/api/accounts"
 $runtimeBase = $env:LOCALAPPDATA
 if ([string]::IsNullOrWhiteSpace($runtimeBase)) { $runtimeBase = $env:TEMP }
@@ -105,14 +105,14 @@ function Stop-RunningProjectServer {
 
   # The app binds only to IPv4 loopback. Ignore IPv6 ::1 listeners such as
   # VS Code Dev Tunnels, which may legitimately use the same port number.
-  $connections = Get-NetTCPConnection -LocalAddress "127.0.0.1" -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue
+  $connections = Get-NetTCPConnection -LocalAddress "127.0.0.1" -LocalPort 4000 -State Listen -ErrorAction SilentlyContinue
   foreach ($connection in $connections) {
     $process = Get-CimInstance Win32_Process -Filter "ProcessId = $($connection.OwningProcess)" -ErrorAction SilentlyContinue
     if ($null -eq $process -or $process.Name -ne "node.exe" -or $process.CommandLine -notlike "*$projectRoot*") {
-      throw "Cong 127.0.0.1:3000 dang duoc ung dung khac su dung; khong the khoi dong lai an toan."
+      throw "Cong 127.0.0.1:4000 dang duoc ung dung khac su dung; khong the khoi dong lai an toan."
     }
     Stop-Process -Id $connection.OwningProcess -Force
-    Write-LauncherLog "Stopped previous project server on port 3000"
+    Write-LauncherLog "Stopped previous project server on port 4000"
   }
 }
 
@@ -159,7 +159,7 @@ try {
     $nextCli = Join-Path $projectRoot "node_modules\next\dist\bin\next"
     if (-not (Test-Path -LiteralPath $nodePath)) { throw "Khong tim thay node.exe." }
     if (-not (Test-Path -LiteralPath $nextCli)) { throw "Khong tim thay Next.js CLI." }
-    $serverProcess = Start-Process -FilePath $nodePath -ArgumentList @("`"$nextCli`"", "start", "--hostname", "127.0.0.1") -WorkingDirectory $projectRoot -WindowStyle Hidden -RedirectStandardOutput (Join-Path $logRoot "server-output.log") -RedirectStandardError (Join-Path $logRoot "server-error.log") -PassThru
+    $serverProcess = Start-Process -FilePath $nodePath -ArgumentList @("`"$nextCli`"", "start", "--hostname", "127.0.0.1", "--port", "4000") -WorkingDirectory $projectRoot -WindowStyle Hidden -RedirectStandardOutput (Join-Path $logRoot "server-output.log") -RedirectStandardError (Join-Path $logRoot "server-error.log") -PassThru
     Set-Content -LiteralPath $serverPidPath -Value $serverProcess.Id -Encoding ASCII
 
     $ready = $false
@@ -167,7 +167,7 @@ try {
       Start-Sleep -Milliseconds 500
       if (Test-AppReady) { $ready = $true; break }
     }
-    if (-not $ready) { throw "Server khong khoi dong duoc trong 30 giay. Hay kiem tra cong 3000." }
+    if (-not $ready) { throw "Server khong khoi dong duoc trong 30 giay. Hay kiem tra cong 4000." }
   }
 
   if ($env:CODEX_USAGE_SKIP_BROWSER -ne "1") {

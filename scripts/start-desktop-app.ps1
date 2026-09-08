@@ -33,12 +33,24 @@ function Invoke-Git([string[]]$Arguments) {
   $gitCommand = Get-Command git.exe -ErrorAction SilentlyContinue
   if ($null -eq $gitCommand) { return @{ ExitCode = 127; Output = "git.exe not found" } }
   $previousPrompt = $env:GIT_TERMINAL_PROMPT
+  $previousErrorAction = $ErrorActionPreference
+  $hasNativePreference = Test-Path variable:PSNativeCommandUseErrorActionPreference
+  if ($hasNativePreference) { $previousNativePreference = $PSNativeCommandUseErrorActionPreference }
   $env:GIT_TERMINAL_PROMPT = "0"
   try {
+    # git writes ordinary network failures to stderr. Capture those as output
+    # instead of letting PowerShell turn them into a terminating exception.
+    $ErrorActionPreference = "Continue"
+    if ($hasNativePreference) { $PSNativeCommandUseErrorActionPreference = $false }
     $output = & $gitCommand.Source -C $projectRoot @Arguments 2>&1
-    return @{ ExitCode = $LASTEXITCODE; Output = ($output -join "`n").Trim() }
+    $exitCode = $LASTEXITCODE
+    return @{ ExitCode = $exitCode; Output = ($output -join "`n").Trim() }
+  } catch {
+    return @{ ExitCode = 1; Output = $_.Exception.Message }
   } finally {
     $env:GIT_TERMINAL_PROMPT = $previousPrompt
+    $ErrorActionPreference = $previousErrorAction
+    if ($hasNativePreference) { $PSNativeCommandUseErrorActionPreference = $previousNativePreference }
   }
 }
 

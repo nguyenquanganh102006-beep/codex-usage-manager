@@ -53,4 +53,14 @@ describe("Codex usage normalization", () => {
     expect(result.windows).toHaveLength(2);
     expect(result.windows.map((window) => window.windowDurationMins)).toEqual([300, 10_080]);
   });
+
+  it("maps an invalid ChatGPT token to login_required without exposing the endpoint", async () => {
+    vi.mocked(readCodexData).mockRejectedValue(new Error("failed to fetch codex rate limits: 401 Unauthorized; Could not parse your authentication token"));
+
+    const result = await fetchCodexUsage("a", "h");
+
+    expect(result.status).toBe("login_required");
+    expect(result.message).toContain("Đăng nhập lại");
+    expect(result.message).not.toContain("backend-api");
+  });
 });

@@ -45,7 +45,11 @@ export async function fetchCodexUsage(accountId: string, codexHomeId: string, op
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const lower = message.toLowerCase();
-    const status = lower.includes("401") || lower.includes("unauthorized") || lower.includes("login") ? "login_required" : lower.includes("403") || lower.includes("forbidden") ? "access_denied" : lower.includes("not found") || lower.includes("codex cli") ? "unsupported" : "error";
-    return { accountId, windows: [], checkedAt, source: "codex_app_server", status, message };
+    const authenticationError = lower.includes("401") || lower.includes("unauthorized") || lower.includes("authentication token") || lower.includes("could not parse") || lower.includes("signing in again") || lower.includes("reauthentication");
+    const status = authenticationError || lower.includes("login") ? "login_required" : lower.includes("403") || lower.includes("forbidden") ? "access_denied" : lower.includes("not found") || lower.includes("codex cli") ? "unsupported" : "error";
+    const userMessage = authenticationError
+      ? "Phiên đăng nhập Codex hết hạn hoặc không hợp lệ. Hãy bấm nút Đăng nhập lại."
+      : message;
+    return { accountId, windows: [], checkedAt, source: "codex_app_server", status, message: userMessage };
   }
 }
